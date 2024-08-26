@@ -187,9 +187,15 @@ def validate_port(module: AnsibleModule, port: (int, str), error_func: Callable 
         return True
 
     try:
-        if int(port) < 1 or int(port) > 65535:
-            error_func(f"Value '{port}' is an invalid port!")
-            return False
+        if '-' in str(port):
+            start_port, end_port = map(int, str(port).split('-'))
+            if (start_port < 1 or start_port > 65535) or (end_port < 1 or end_port > 65535):
+                error_func(f"Value '{port}' is an invalid port range!")
+                return False
+        else:
+            if int(port) < 1 or int(port) > 65535:
+                error_func(f"Value '{port}' is an invalid port!")
+                return False
 
     except (ValueError, TypeError):
         error_func(f"Value '{port}' is an invalid port!")
