@@ -179,7 +179,11 @@ def get_multiple_matching(
     return matching
 
 
-def validate_port(module: AnsibleModule, port: (int, str), error_func: Callable = None) -> bool:
+def _valid_port(port: int) -> bool:
+    return 0 < port < 65536
+
+
+def validate_port(module: AnsibleModule, port: (int, str), port_range: bool = False, error_func: Callable = None) -> bool:
     if error_func is None:
         error_func = module.fail_json
 
@@ -187,13 +191,14 @@ def validate_port(module: AnsibleModule, port: (int, str), error_func: Callable 
         return True
 
     try:
-        if '-' in str(port):
-            start_port, end_port = map(int, str(port).split('-'))
-            if (start_port < 1 or start_port > 65535) or (end_port < 1 or end_port > 65535) or (start_port > end_port):
+        if port_range and str(port).find(':') != -1:
+            start_port, end_port = map(int, str(port).split(':', 1))
+            if start_port > end_port or not _valid_port(start_port) or not _valid_port(end_port):
                 error_func(f"Value '{port}' is an invalid port range!")
                 return False
+
         else:
-            if int(port) < 1 or int(port) > 65535:
+            if _valid_port(int(port)):
                 error_func(f"Value '{port}' is an invalid port!")
                 return False
 
